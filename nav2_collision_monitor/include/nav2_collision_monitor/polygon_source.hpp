@@ -20,6 +20,7 @@
 #include <string>
 
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "geometry_msgs/msg/polygon_instance_stamped.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
 
@@ -95,25 +96,15 @@ protected:
    * @brief PolygonSource data callback
    * @param msg Shared pointer to PolygonSource message
    */
-  void dataCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
-
-  /**
-   * @brief Checks if two polygons are similar
-   * @param polygon1 First polygon
-   * @param polygon2 Second polygon
-   * @return True if polygons are similar, false otherwise
-   */
-  bool arePolygonsSimilar(
-    const geometry_msgs::msg::Polygon & polygon1,
-    const geometry_msgs::msg::Polygon & polygon2) const;
+  void dataCallback(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg);
 
   // ----- Variables -----
 
   /// @brief PolygonSource data subscriber
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr data_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr data_sub_;
 
   /// @brief Latest data obtained
-  std::vector<geometry_msgs::msg::PolygonStamped> data_;
+  std::vector<geometry_msgs::msg::PolygonInstanceStamped> data_;
 
   /// @brief distance between sampled points on polygon edges
   double sampling_distance_;

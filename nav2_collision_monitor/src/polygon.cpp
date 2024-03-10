@@ -71,7 +71,7 @@ bool Polygon::configure()
       "[%s]: Subscribing on %s topic for polygon",
       polygon_name_.c_str(), polygon_sub_topic.c_str());
     rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
-    polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
+    polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonInstanceStamped>(
       polygon_sub_topic, polygon_qos,
       std::bind(&Polygon::polygonCallback, this, std::placeholders::_1));
   }
@@ -96,11 +96,11 @@ bool Polygon::configure()
       p_s.x = p.x;
       p_s.y = p.y;
       // p_s.z will remain 0.0
-      polygon_.polygon.points.push_back(p_s);
+      polygon_.polygon.polygon.points.push_back(p_s);
     }
 
     rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
-    polygon_pub_ = node->create_publisher<geometry_msgs::msg::PolygonStamped>(
+    polygon_pub_ = node->create_publisher<geometry_msgs::msg::PolygonInstanceStamped>(
       polygon_pub_topic, polygon_qos);
   }
 
@@ -190,20 +190,20 @@ void Polygon::updatePolygon()
     std::size_t new_size = footprint_vec.size();
     poly_.resize(new_size);
     polygon_.header.frame_id = base_frame_id_;
-    polygon_.polygon.points.resize(new_size);
+    polygon_.polygon.polygon.points.resize(new_size);
 
     geometry_msgs::msg::Point32 p_s;
     for (std::size_t i = 0; i < new_size; i++) {
       poly_[i] = {footprint_vec[i].x, footprint_vec[i].y};
       p_s.x = footprint_vec[i].x;
       p_s.y = footprint_vec[i].y;
-      polygon_.polygon.points[i] = p_s;
+      polygon_.polygon.polygon.points[i] = p_s;
     }
   } else if (!polygon_.header.frame_id.empty() && polygon_.header.frame_id != base_frame_id_) {
     // Polygon is published in another frame: correct poly_ vertices to the latest frame state
-    std::size_t new_size = polygon_.polygon.points.size();
+    std::size_t new_size = polygon_.polygon.polygon.points.size();
 
-    // Get the transform from PolygonStamped frame to base_frame_id_
+    // Get the transform from PolygonInstanceStamped frame to base_frame_id_
     tf2::Stamped<tf2::Transform> tf_transform;
     if (
       !nav2_util::getTransform(
@@ -216,8 +216,9 @@ void Polygon::updatePolygon()
     // Correct main poly_ vertices
     poly_.resize(new_size);
     for (std::size_t i = 0; i < new_size; i++) {
-      // Transform point coordinates from PolygonStamped frame -> to base frame
-      tf2::Vector3 p_v3_s(polygon_.polygon.points[i].x, polygon_.polygon.points[i].y, 0.0);
+      // Transform point coordinates from PolygonInstanceStamped frame -> to base frame
+      tf2::Vector3 p_v3_s(polygon_.polygon.polygon.points[i].x,
+        polygon_.polygon.polygon.points[i].y, 0.0);
       tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
       // Fill poly_ array
@@ -280,7 +281,7 @@ void Polygon::publish()
 
   // Actualize the time to current and publish the polygon
   polygon_.header.stamp = node->now();
-  auto msg = std::make_unique<geometry_msgs::msg::PolygonStamped>(polygon_);
+  auto msg = std::make_unique<geometry_msgs::msg::PolygonInstanceStamped>(polygon_);
   polygon_pub_->publish(std::move(msg));
 }
 
@@ -464,9 +465,9 @@ bool Polygon::getParameters(
   return true;
 }
 
-void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
+void Polygon::updatePolygon(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg)
 {
-  std::size_t new_size = msg->polygon.points.size();
+  std::size_t new_size = msg->polygon.polygon.points.size();
 
   if (new_size < 3) {
     RCLCPP_ERROR(
@@ -476,7 +477,7 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
     return;
   }
 
-  // Get the transform from PolygonStamped frame to base_frame_id_
+  // Get the transform from PolygonInstanceStamped frame to base_frame_id_
   tf2::Stamped<tf2::Transform> tf_transform;
   if (
     !nav2_util::getTransform(
@@ -489,8 +490,8 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   // Set main poly_ vertices first time
   poly_.resize(new_size);
   for (std::size_t i = 0; i < new_size; i++) {
-    // Transform point coordinates from PolygonStamped frame -> to base frame
-    tf2::Vector3 p_v3_s(msg->polygon.points[i].x, msg->polygon.points[i].y, 0.0);
+    // Transform point coordinates from PolygonInstanceStamped frame -> to base frame
+    tf2::Vector3 p_v3_s(msg->polygon.polygon.points[i].x, msg->polygon.polygon.points[i].y, 0.0);
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Fill poly_ array
@@ -498,7 +499,7 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   }
 
   // Store incoming polygon for further (possible) poly_ vertices corrections
-  // from PolygonStamped frame -> to base frame
+  // from PolygonInstanceStamped frame -> to base frame
   polygon_ = *msg;
 }
 
@@ -522,7 +523,7 @@ Polygon::dynamicParametersCallback(
   return result;
 }
 
-void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
+void Polygon::polygonCallback(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg)
 {
   RCLCPP_INFO(
     logger_,

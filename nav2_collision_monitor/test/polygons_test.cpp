@@ -26,6 +26,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "geometry_msgs/msg/polygon_instance_stamped.hpp"
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -65,7 +66,7 @@ public:
   TestNode()
   : nav2_util::LifecycleNode("test_node"), polygon_received_(nullptr)
   {
-    polygon_sub_ = this->create_subscription<geometry_msgs::msg::PolygonStamped>(
+    polygon_sub_ = this->create_subscription<geometry_msgs::msg::PolygonInstanceStamped>(
       POLYGON_PUB_TOPIC, rclcpp::SystemDefaultsQoS(),
       std::bind(&TestNode::polygonCallback, this, std::placeholders::_1));
   }
@@ -78,11 +79,11 @@ public:
 
   void publishPolygon(const std::string & frame_id, const bool is_correct)
   {
-    polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
+    polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonInstanceStamped>(
       POLYGON_SUB_TOPIC, rclcpp::SystemDefaultsQoS());
 
-    std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
-      std::make_unique<geometry_msgs::msg::PolygonStamped>();
+    std::unique_ptr<geometry_msgs::msg::PolygonInstanceStamped> msg =
+      std::make_unique<geometry_msgs::msg::PolygonInstanceStamped>();
 
     unsigned int polygon_size;
     if (is_correct) {
@@ -98,7 +99,7 @@ public:
     for (unsigned int i = 0; i < polygon_size; i = i + 2) {
       p.x = SQUARE_POLYGON[i];
       p.y = SQUARE_POLYGON[i + 1];
-      msg->polygon.points.push_back(p);
+      msg->polygon.polygon.points.push_back(p);
     }
 
     polygon_pub_->publish(std::move(msg));
@@ -125,12 +126,12 @@ public:
     footprint_pub_->publish(std::move(msg));
   }
 
-  void polygonCallback(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
+  void polygonCallback(geometry_msgs::msg::PolygonInstanceStamped::SharedPtr msg)
   {
     polygon_received_ = msg;
   }
 
-  geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(
+  geometry_msgs::msg::PolygonInstanceStamped::SharedPtr waitPolygonReceived(
     const std::chrono::nanoseconds & timeout)
   {
     rclcpp::Time start_time = this->now();
@@ -145,11 +146,11 @@ public:
   }
 
 private:
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr polygon_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr polygon_sub_;
 
-  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
+  geometry_msgs::msg::PolygonInstanceStamped::SharedPtr polygon_received_;
 };  // TestNode
 
 class PolygonWrapper : public nav2_collision_monitor::Polygon
@@ -860,19 +861,19 @@ TEST_F(Tester, testPolygonPublish)
 {
   createPolygon("stop", true);
   polygon_->publish();
-  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received =
+  geometry_msgs::msg::PolygonInstanceStamped::SharedPtr polygon_received =
     test_node_->waitPolygonReceived(500ms);
 
   ASSERT_NE(polygon_received, nullptr);
-  ASSERT_EQ(polygon_received->polygon.points.size(), 4u);
-  EXPECT_NEAR(polygon_received->polygon.points[0].x, SQUARE_POLYGON[0], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[0].y, SQUARE_POLYGON[1], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[1].x, SQUARE_POLYGON[2], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[1].y, SQUARE_POLYGON[3], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[2].x, SQUARE_POLYGON[4], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[2].y, SQUARE_POLYGON[5], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[3].x, SQUARE_POLYGON[6], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[3].y, SQUARE_POLYGON[7], EPSILON);
+  ASSERT_EQ(polygon_received->polygon.polygon.points.size(), 4u);
+  EXPECT_NEAR(polygon_received->polygon.polygon.points[0].x, SQUARE_POLYGON[0], EPSILON);
+  EXPECT_NEAR(polygon_received->polygon.polygon.points[0].y, SQUARE_POLYGON[1], EPSILON);
+  EXPECT_NEAR(polygon_received->polygon.polygon.points[1].x, SQUARE_POLYGON[2], EPSILON);
+  EXPECT_NEAR(polygon_received->polygon.polygon.points[1].y, SQUARE_POLYGON[3], EPSILON);
+  EXPECT_NEAR(polygon_received->polygon.polygon.points[2].x, SQUARE_POLYGON[4], EPSILON);
+  EXPECT_NEAR(polygon_received->polygon.polygon.points[2].y, SQUARE_POLYGON[5], EPSILON);
+  EXPECT_NEAR(polygon_received->polygon.polygon.points[3].x, SQUARE_POLYGON[6], EPSILON);
+  EXPECT_NEAR(polygon_received->polygon.polygon.points[3].y, SQUARE_POLYGON[7], EPSILON);
 
   polygon_->deactivate();
 }

@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "geometry_msgs/msg/polygon_instance_stamped.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -185,16 +185,16 @@ protected:
     std::string & footprint_topic);
 
   /**
-   * @brief Updates polygon from geometry_msgs::msg::PolygonStamped message
+   * @brief Updates polygon from geometry_msgs::msg::PolygonInstanceStamped message
    * @param msg Message to update polygon from
    */
-  void updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
+  void updatePolygon(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg);
 
   /**
    * @brief Dynamic polygon callback
    * @param msg Shared pointer to the polygon message
    */
-  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
+  void polygonCallback(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg);
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -239,7 +239,7 @@ protected:
   /// @brief Whether polygon is enabled
   bool enabled_;
   /// @brief Polygon subscription
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
@@ -255,9 +255,10 @@ protected:
   /// @brief Whether to publish the polygon
   bool visualize_;
   /// @brief Polygon, used for: 1. visualization; 2. storing latest dynamic polygon message
-  geometry_msgs::msg::PolygonStamped polygon_;
+  geometry_msgs::msg::PolygonInstanceStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
+    polygon_pub_;
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;
